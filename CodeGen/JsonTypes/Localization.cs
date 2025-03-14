@@ -3,7 +3,8 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace CodeGen.JsonTypes
 {
@@ -21,28 +22,17 @@ namespace CodeGen.JsonTypes
         /// <exception cref="NotSupportedException">Unit abbreviations must be a string or an array of strings.</exception>
         public bool TryGetAbbreviationsForPrefix(Prefix prefix, [NotNullWhen(true)] out string[]? unitAbbreviations)
         {
-            if (AbbreviationsForPrefixes == null ||
-                !AbbreviationsForPrefixes.TryGetValue(prefix.ToString(), out JToken? value))
-            {
-                unitAbbreviations = default;
-                return false;
-            }
+            var value = AbbreviationsForPrefixes?[prefix.ToString()];
 
-            switch (value.Type)
-            {
-                case JTokenType.String:
-                {
-                    unitAbbreviations = new[] { value.ToObject<string>()! };
-                    return true;
-                }
-                case JTokenType.Array:
-                {
-                    unitAbbreviations = value.ToObject<string[]>()!;
-                    return true;
-                }
-                default:
-                    throw new NotSupportedException($"AbbreviationsForPrefixes.{prefix} must be a string or an array of strings, but was {value.Type}.");
-            }
+            unitAbbreviations = value?.GetValueKind() switch
+                                {
+                                    null => null,
+                                    JsonValueKind.String => [value.Deserialize<string>()!],
+                                    JsonValueKind.Array => value.Deserialize<string[]>()!,
+                                    _ => throw new NotSupportedException($"AbbreviationsForPrefixes.{prefix} must be a string or an array of strings,"
+                                                                         + $" but was {value.GetValueKind()}.")
+                                };
+            return unitAbbreviations is not null;
         }
         // 0649 Field is never assigned to
 #pragma warning disable 0649
@@ -66,7 +56,7 @@ namespace CodeGen.JsonTypes
         ///     The unit abbreviation value can either be a string or an array of strings. Typically the number of abbreviations
         ///     for a prefix matches that of "Abbreviations" array, but this is not required.
         /// </remarks>
-        public JObject? AbbreviationsForPrefixes;
+        public JsonObject? AbbreviationsForPrefixes;
 
         /// <summary>
         ///     The name of the culture this is a localization for.

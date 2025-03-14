@@ -13,15 +13,15 @@ namespace CodeGen.JsonTypes
 #pragma warning disable 0649
 
         public BaseDimensions BaseDimensions = new(); // Default to empty
-        public string BaseUnit = null!;
+        public required string BaseUnit;
         public bool GenerateArithmetic = true;
         public bool Logarithmic = false;
         public int LogarithmicScalingFactor = 1;
-        public string Name = null!;
-        public Unit[] Units = Array.Empty<Unit>();
-        public QuantityRelation[] Relations = Array.Empty<QuantityRelation>();
+        public required string Name { get; init; }
+        public Unit[] Units = [];
+        public QuantityRelation[] Relations = [];
         public string? XmlDocRemarks;
-        public string XmlDocSummary = null!;
+        public required string XmlDocSummary;
         public string? ObsoleteText;
 
         // 0649 Field is never assigned to

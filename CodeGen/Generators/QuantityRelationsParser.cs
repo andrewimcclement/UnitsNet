@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using CodeGen.Exceptions;
 using CodeGen.JsonTypes;
-using Newtonsoft.Json;
 
 namespace CodeGen.Generators
 {
@@ -44,7 +44,7 @@ namespace CodeGen.Generators
             var quantityDictionary = quantities.ToDictionary(q => q.Name, q => q);
 
             // Add double and 1 as pseudo-quantities to validate relations that use them.
-            var pseudoQuantity = new Quantity { Name = null!, Units = [new Unit { SingularName = null! }] };
+            var pseudoQuantity = new Quantity { Name = null!, BaseUnit = null!, XmlDocSummary = null!, Units = [new Unit { SingularName = null! }] };
             quantityDictionary["double"] = pseudoQuantity with { Name = "double" };
             quantityDictionary["1"] = pseudoQuantity with { Name = "1" };
 
@@ -61,7 +61,7 @@ namespace CodeGen.Generators
                     RightUnit = r.LeftUnit,
                 })
                 .ToList());
-            
+
             // We can infer division relations from multiplication relations.
             relations.AddRange(relations
                 .Where(r => r is { Operator: "*", NoInferredDivision: false })
@@ -91,7 +91,7 @@ namespace CodeGen.Generators
                 var list = string.Join("\n  ", duplicates);
                 throw new UnitsNetCodeGenException($"Duplicate inferred relations:\n  {list}");
             }
-            
+
             var ambiguous = relations
                 .GroupBy(r => $"{r.LeftQuantity.Name} {r.Operator} {r.RightQuantity.Name}")
                 .Where(g => g.Count() > 1)
@@ -133,12 +133,12 @@ namespace CodeGen.Generators
             try
             {
                 var text = File.ReadAllText(relationsFileName);
-                var relationStrings = JsonConvert.DeserializeObject<SortedSet<string>>(text) ?? [];
+                var relationStrings = JsonSerializer.Deserialize<SortedSet<string>>(text) ?? [];
 
                 var parsedRelations = relationStrings.Select(relationString => ParseRelation(relationString, quantities)).ToList();
 
                 // File parsed successfully, save it back to disk in the sorted state.
-                File.WriteAllText(relationsFileName, JsonConvert.SerializeObject(relationStrings, Formatting.Indented));
+                File.WriteAllText(relationsFileName, JsonSerializer.Serialize(relationStrings, new JsonSerializerOptions { WriteIndented = true }));
 
                 return parsedRelations;
             }

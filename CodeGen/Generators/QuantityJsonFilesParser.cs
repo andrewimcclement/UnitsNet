@@ -5,10 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CodeGen.Exceptions;
 using CodeGen.Helpers.PrefixBuilder;
 using CodeGen.JsonTypes;
-using Newtonsoft.Json;
 using static CodeGen.Helpers.PrefixBuilder.BaseUnitPrefixes;
 
 namespace CodeGen.Generators;
@@ -20,10 +21,12 @@ namespace CodeGen.Generators;
 /// </summary>
 internal static class QuantityJsonFilesParser
 {
-    private static readonly JsonSerializerSettings JsonSerializerSettings = new()
+    private static readonly JsonSerializerOptions JsonSerializerSettings = new()
     {
         // Don't override the C# default assigned values if no value is set in JSON
-        NullValueHandling = NullValueHandling.Ignore
+        // DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        RespectNullableAnnotations = true,
+        RespectRequiredConstructorParameters = true,
     };
 
     private static readonly string[] BaseQuantityFileNames =
@@ -54,12 +57,12 @@ internal static class QuantityJsonFilesParser
     {
         try
         {
-            return JsonConvert.DeserializeObject<Quantity>(File.ReadAllText(jsonFileName), JsonSerializerSettings)
+            return JsonSerializer.Deserialize<Quantity>(File.ReadAllText(jsonFileName), JsonSerializerSettings)
                    ?? throw new UnitsNetCodeGenException($"Unable to parse quantity from JSON file: {jsonFileName}");
         }
-        catch (Exception e)
+        catch (JsonException e)
         {
-            throw new Exception($"Error parsing quantity JSON file: {jsonFileName}", e);
+            throw new InvalidOperationException($"Error parsing quantity JSON file: {jsonFileName}", e);
         }
     }
 
