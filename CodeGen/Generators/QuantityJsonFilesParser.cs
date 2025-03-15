@@ -23,6 +23,7 @@ internal static class QuantityJsonFilesParser
 {
     private static readonly JsonSerializerOptions JsonSerializerSettings = new()
     {
+        AllowTrailingCommas = true, ReadCommentHandling = JsonCommentHandling.Skip,
         // Don't override the C# default assigned values if no value is set in JSON
         // DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         RespectNullableAnnotations = true,
@@ -57,7 +58,8 @@ internal static class QuantityJsonFilesParser
     {
         try
         {
-            return JsonSerializer.Deserialize<Quantity>(File.ReadAllText(jsonFileName), JsonSerializerSettings)
+            using var stream = File.OpenRead(jsonFileName);
+            return JsonSerializer.Deserialize<Quantity>(stream, JsonSerializerSettings)
                    ?? throw new UnitsNetCodeGenException($"Unable to parse quantity from JSON file: {jsonFileName}");
         }
         catch (JsonException e)

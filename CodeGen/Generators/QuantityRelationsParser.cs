@@ -132,13 +132,14 @@ namespace CodeGen.Generators
 
             try
             {
-                var text = File.ReadAllText(relationsFileName);
-                var relationStrings = JsonSerializer.Deserialize<SortedSet<string>>(text) ?? [];
+                using var stream = File.Open(relationsFileName, FileMode.Open,FileAccess.ReadWrite);
+                var relationStrings = JsonSerializer.Deserialize<SortedSet<string>>(stream) ?? [];
 
                 var parsedRelations = relationStrings.Select(relationString => ParseRelation(relationString, quantities)).ToList();
 
                 // File parsed successfully, save it back to disk in the sorted state.
-                File.WriteAllText(relationsFileName, JsonSerializer.Serialize(relationStrings, new JsonSerializerOptions { WriteIndented = true }));
+                stream.Position = 0;
+                JsonSerializer.Serialize(stream, parsedRelations, new JsonSerializerOptions { AllowTrailingCommas = true, ReadCommentHandling = JsonCommentHandling.Skip,WriteIndented = true });
 
                 return parsedRelations;
             }

@@ -162,7 +162,8 @@ Conflicts:
         {
             if (File.Exists(jsonFile))
             {
-                return JsonSerializer.Deserialize<QuantityNameToUnitEnumValues>(File.ReadAllText(jsonFile), JsonOptions)
+                using var stream = File.OpenRead(jsonFile);
+                return JsonSerializer.Deserialize<QuantityNameToUnitEnumValues>(stream, JsonOptions)
                        ?? throw new InvalidOperationException($"Failed to deserialize file: {jsonFile}");
             }
 
